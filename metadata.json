@@ -1,0 +1,8 @@
+{
+  "name": "FinNavi",
+  "description": "A financial wellness app designed for humans, not spreadsheets. Features debt snowball/avalanche strategies, 'What-If' simulations, and AI-powered financial advice.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
