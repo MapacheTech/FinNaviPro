@@ -5,29 +5,46 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { ShieldCheck, Fingerprint, Lock, ArrowRight, Wallet } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, signUp } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isBiometric, setIsBiometric] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false); // Toggle state
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleAuth = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setLoading(true);
     
-    // Simulate network request
-    setTimeout(() => {
-      login();
-      navigate('/');
-    }, 1500);
+    let result;
+    if (isSignUp) {
+        result = await signUp(email, password);
+    } else {
+        result = await login(email, password);
+    }
+
+    const { error } = result;
+    
+    if (error) {
+       alert(error.message);
+       setLoading(false);
+    } else {
+       if (isSignUp) {
+           alert("Account created! Please check your email to verify.");
+           setIsSignUp(false); // Switch back to login
+           setLoading(false);
+       } else {
+           navigate('/');
+       }
+    }
   };
 
   const handleBiometric = () => {
       setIsBiometric(true);
       setTimeout(() => {
-          handleLogin();
+          handleAuth();
       }, 800);
   };
 
@@ -40,14 +57,14 @@ export const Login: React.FC = () => {
             <Wallet size={40} className="text-black" />
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight mb-2">FinNavi</h1>
-        <p className="text-textMuted text-sm">{t('auth.welcome')}</p>
+        <p className="text-textMuted text-sm">{isSignUp ? "Create your account" : t('auth.welcome')}</p>
       </div>
 
       {/* Login Form */}
       <div className="w-full space-y-4 px-2 animate-in slide-in-from-bottom-10 duration-700 delay-150">
           
           <div className="bg-surfaceHighlight/50 border border-white/10 rounded-3xl p-6 shadow-2xl backdrop-blur-sm">
-             <form onSubmit={handleLogin} className="space-y-4">
+             <form onSubmit={handleAuth} className="space-y-4">
                  <div className="space-y-1">
                      <label className="text-xs font-bold text-textMuted ml-1 uppercase">{t('auth.email')}</label>
                      <input 
@@ -79,7 +96,7 @@ export const Login: React.FC = () => {
                     {loading && !isBiometric ? (
                         <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
                     ) : (
-                        <>{t('auth.signin')} <ArrowRight size={18} strokeWidth={3} /></>
+                        <>{isSignUp ? "Create Account" : t('auth.signin')} <ArrowRight size={18} strokeWidth={3} /></>
                     )}
                  </button>
              </form>
@@ -119,7 +136,13 @@ export const Login: React.FC = () => {
       {/* Footer */}
       <div className="text-center pb-4">
           <p className="text-xs text-textMuted">
-              {t('auth.create_account')} <span className="text-white font-bold cursor-pointer hover:underline">{t('auth.create_one')}</span>
+              {isSignUp ? "Already have an account?" : t('auth.create_account')} 
+              <span 
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-white font-bold cursor-pointer hover:underline ml-1"
+              >
+                  {isSignUp ? "Sign In" : t('auth.create_one')}
+              </span>
           </p>
       </div>
 

@@ -1,17 +1,40 @@
+export type PaymentType = 'lump_sum' | 'installments_no_interest' | 'installments_with_interest';
+
 export interface Debt {
   id: string;
   name: string;
   provider: string; // e.g., Chase, Wells Fargo
-  balance: number;
+  balance: number; // Current remaining balance (maps to 'amount' in DB)
   apr: number;
   minPayment: number;
-  dueDate: string; // ISO date string
+  dueDate: string; // ISO date string (legacy, use payment_due_day for recurring)
   category: 'credit_card' | 'loan' | 'mortgage' | 'auto';
+  
+  // Enhanced payment tracking (Phase 2)
+  paymentType?: PaymentType;
+  totalMonths?: number; // Total installments
+  monthlyPayment?: number; // Fixed monthly payment
+  originalAmount?: number; // Original purchase/loan amount
+  totalInterest?: number; // Calculated total interest over loan term
+  cutOffDay?: number; // Day of month (1-31) for card cut-off
+  paymentDueDay?: number; // Day of month (1-31) for payment due
+  monthsPaid?: number; // Number of payments already made
 }
 
 export enum Strategy {
   SNOWBALL = 'SNOWBALL',
   AVALANCHE = 'AVALANCHE'
+}
+
+// Payment tracking (Phase 3)
+export interface Payment {
+  id: string;
+  debtId: string;
+  userId: string;
+  amount: number;
+  paymentDate: string; // ISO date
+  note?: string;
+  createdAt: string;
 }
 
 export interface NotificationPreferences {
@@ -58,7 +81,7 @@ export interface Asset {
   id: string;
   name: string;
   value: number;
-  type: 'cash' | 'investment' | 'property' | 'crypto';
+  type: 'cash' | 'investment' | 'property' | 'crypto' | 'vehicle' | 'other';
 }
 
 export interface Friend {

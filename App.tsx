@@ -1,5 +1,5 @@
 import React from 'react';
-import { MemoryRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { DebtCommandCenter } from './pages/DebtCommandCenter';
@@ -8,6 +8,10 @@ import { Social } from './pages/Social';
 import { Profile } from './pages/Profile';
 import { Login } from './pages/Login';
 import { AddTransaction } from './pages/AddTransaction';
+import { AddDebt } from './pages/AddDebt';
+import { InterestCalculator } from './pages/InterestCalculator';
+import { Transactions } from './pages/Transactions';
+import { Budget } from './pages/Budget';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 
@@ -36,6 +40,12 @@ const AppRoutes = () => {
         <Route path="/advisor" element={<ProtectedRoute><Advisor /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/add" element={<ProtectedRoute><AddTransaction /></ProtectedRoute>} />
+        <Route path="/add-transaction" element={<ProtectedRoute><AddTransaction /></ProtectedRoute>} />
+        <Route path="/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+        <Route path="/add-debt" element={<ProtectedRoute><AddDebt /></ProtectedRoute>} />
+        <Route path="/debts" element={<ProtectedRoute><DebtCommandCenter /></ProtectedRoute>} />
+        <Route path="/calculator" element={<ProtectedRoute><InterestCalculator /></ProtectedRoute>} />
+        <Route path="/budget" element={<ProtectedRoute><Budget /></ProtectedRoute>} />
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -47,9 +57,9 @@ const App: React.FC = () => {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <MemoryRouter>
+        <HashRouter>
           <AppRoutes />
-        </MemoryRouter>
+        </HashRouter>
       </AuthProvider>
     </LanguageProvider>
   );

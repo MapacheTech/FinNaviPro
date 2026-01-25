@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MOCK_USER } from '../constants';
 import { X, Check, Crown, CreditCard, ShieldCheck, Star } from 'lucide-react';
+import { profileService } from '../services/profileService';
 
 interface ProUpgradeModalProps {
   isOpen: boolean;
@@ -22,19 +22,21 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({ isOpen, onClos
     "Ad-free Experience"
   ];
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!cardDetails.number || !cardDetails.expiry || !cardDetails.cvc) return;
-    
+
     setLoading(true);
-    // Simulate API processing
-    setTimeout(() => {
+    // Simulate payment processing, then upgrade subscription
+    setTimeout(async () => {
+        const success = await profileService.upgradeToPro();
         setLoading(false);
-        setStep('success');
-        MOCK_USER.subscriptionStatus = 'pro';
-        setTimeout(() => {
-            onSuccess();
-            onClose();
-        }, 2000);
+        if (success) {
+          setStep('success');
+          setTimeout(() => {
+              onSuccess();
+              onClose();
+          }, 2000);
+        }
     }, 2000);
   };
 

@@ -1,21 +1,26 @@
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Camera, Upload, Check, Loader2, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { parseReceipt } from '../services/geminiService';
+import { transactionService } from '../services/transactionService';
 
 export const AddTransaction: React.FC = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [type, setType] = useState<'expense' | 'income'>('expense');
+  // Get default type from navigation state (from Quick Add Menu)
+  const defaultType = (location.state as { defaultType?: string })?.defaultType;
+  const [type, setType] = useState<'expense' | 'income'>(defaultType === 'income' ? 'income' : 'expense');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [category, setCategory] = useState('General');
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,12 +48,33 @@ export const AddTransaction: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
-      // Logic to save would go here (update Mock Data or Context)
-      setSuccess(true);
-      setTimeout(() => {
-          navigate('/');
-      }, 1500);
+  const handleSave = async () => {
+      if (!amount || isSaving) return;
+
+      setIsSaving(true);
+      try {
+        const result = await transactionService.addTransaction({
+          type,
+          amount: parseFloat(amount),
+          category,
+          merchant: note || undefined,
+          description: note || undefined,
+          transactionDate: date
+        });
+
+        if (result) {
+          setSuccess(true);
+          setTimeout(() => {
+            navigate('/');
+          }, 1500);
+        } else {
+          console.error('Failed to save transaction');
+          setIsSaving(false);
+        }
+      } catch (error) {
+        console.error('Error saving transaction:', error);
+        setIsSaving(false);
+      }
   };
 
   return (
@@ -184,15 +210,17 @@ export const AddTransaction: React.FC = () => {
                />
            </div>
 
-           <button 
+           <button
                 onClick={handleSave}
-                disabled={!amount || success}
+                disabled={!amount || success || isSaving}
                 className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-4 ${
-                    success ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-200'
+                    success ? 'bg-green-500 text-white' : 'bg-white text-black hover:bg-gray-200 disabled:opacity-50'
                 }`}
            >
                 {success ? (
                     <><Check size={24} /> {t('add.success')}</>
+                ) : isSaving ? (
+                    <><Loader2 size={24} className="animate-spin" /> Saving...</>
                 ) : (
                     t('add.save')
                 )}

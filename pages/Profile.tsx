@@ -1,48 +1,95 @@
-import React, { useMemo, useState } from 'react';
-import { MOCK_USER, MOCK_ASSETS, MOCK_DEBTS, AVAILABLE_BADGES } from '../constants';
-import { Wallet, Award, Settings, ChevronRight, Lock, Crown, Star, CheckCircle } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AVAILABLE_BADGES } from '../constants';
+import { Wallet, Award, Settings, ChevronRight, Lock, Crown, Star, CheckCircle, Calculator, Loader2, Plus, DollarSign, Receipt, PieChart } from 'lucide-react';
 import { ReminderSettings } from '../components/ReminderSettings';
 import { ProUpgradeModal } from '../components/ProUpgradeModal';
+import { AssetModal } from '../components/AssetModal';
+import { IncomeSettingsModal } from '../components/IncomeSettingsModal';
 import { useLanguage } from '../contexts/LanguageContext';
+import { profileService } from '../services/profileService';
+import { assetService } from '../services/assetService';
+import { UserProfile, Asset } from '../types';
 
 export const Profile: React.FC = () => {
   const { t } = useLanguage();
   const [showSettings, setShowSettings] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [refresh, setRefresh] = useState(0); 
+  const [showAssetModal, setShowAssetModal] = useState(false);
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [refresh, setRefresh] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [assets, setAssets] = useState<Asset[]>([]);
 
-  const totalAssets = useMemo(() => MOCK_ASSETS.reduce((acc, curr) => acc + curr.value, 0), []);
-  const totalDebt = MOCK_USER.totalDebt;
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [profileData, assetsData] = await Promise.all([
+          profileService.getProfile(),
+          assetService.getAssets()
+        ]);
+        setProfile(profileData);
+        setAssets(assetsData);
+      } catch (error) {
+        console.error('Error loading profile data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [refresh]);
+
+  const totalAssets = useMemo(() => assets.reduce((acc, curr) => acc + curr.value, 0), [assets]);
+  const totalDebt = profile?.totalDebt || 0;
   const netWorth = totalAssets - totalDebt;
 
   const allBadgesDisplay = AVAILABLE_BADGES.map(badge => {
-      const isEarned = MOCK_USER.badges.some(b => b.id === badge.id);
+      const isEarned = profile?.badges?.some(b => b.id === badge.id) || false;
       return { ...badge, isEarned };
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-textMuted">Error al cargar perfil</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pt-2">
       {/* Header */}
       <div className="flex flex-col items-center">
         <div className="w-24 h-24 rounded-full bg-surfaceHighlight border-4 border-surface relative mb-3">
-             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${MOCK_USER.name}`} alt="Avatar" className="w-full h-full p-1" />
-             <div className={`absolute bottom-0 right-0 text-black text-xs font-bold px-2 py-0.5 rounded-full border-2 border-background ${MOCK_USER.subscriptionStatus === 'pro' ? 'bg-secondary text-white' : 'bg-primary'}`}>
-                {MOCK_USER.subscriptionStatus === 'pro' ? 'PRO' : `${t('profile.level')} ${MOCK_USER.level}`}
+             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.name}`} alt="Avatar" className="w-full h-full p-1" />
+             <div className={`absolute bottom-0 right-0 text-black text-xs font-bold px-2 py-0.5 rounded-full border-2 border-background ${profile.subscriptionStatus === 'pro' ? 'bg-secondary text-white' : 'bg-primary'}`}>
+                {profile.subscriptionStatus === 'pro' ? 'PRO' : `${t('profile.level')} ${profile.level}`}
              </div>
         </div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-            {MOCK_USER.name}
-            {MOCK_USER.subscriptionStatus === 'pro' && <Crown size={18} className="text-secondary" fill="currentColor" />}
+            {profile.name}
+            {profile.subscriptionStatus === 'pro' && <Crown size={18} className="text-secondary" fill="currentColor" />}
         </h1>
         <div className="flex items-center gap-2 mt-1">
             <p className="text-textMuted text-sm">{t('profile.warrior')}</p>
             <span className="w-1 h-1 bg-textMuted rounded-full"></span>
-            <p className="text-primary text-sm font-bold">{MOCK_USER.points} XP</p>
+            <p className="text-primary text-sm font-bold">{profile.points} XP</p>
         </div>
       </div>
 
       {/* PRO Upgrade Card (If Not Pro) OR Pro Status Card (If Pro) */}
-      {MOCK_USER.subscriptionStatus !== 'pro' ? (
+      {profile.subscriptionStatus !== 'pro' ? (
           <div 
             onClick={() => setShowUpgradeModal(true)}
             className="bg-gradient-to-r from-secondary/20 to-purple-900/40 border border-secondary/50 rounded-3xl p-5 flex items-center justify-between cursor-pointer group hover:scale-[1.02] transition-transform"
@@ -92,8 +139,17 @@ export const Profile: React.FC = () => {
             </h2>
             <div className="w-full h-2 bg-black rounded-full mt-4 flex overflow-hidden">
                 {/* Visualizing Assets vs Debt */}
-                <div className="bg-primary h-full" style={{ width: '40%' }}></div>
-                <div className="bg-accent h-full" style={{ width: '60%' }}></div>
+                {(() => {
+                  const total = totalAssets + totalDebt;
+                  const assetsPercent = total > 0 ? Math.round((totalAssets / total) * 100) : 50;
+                  const debtPercent = 100 - assetsPercent;
+                  return (
+                    <>
+                      <div className="bg-primary h-full" style={{ width: `${assetsPercent}%` }}></div>
+                      <div className="bg-accent h-full" style={{ width: `${debtPercent}%` }}></div>
+                    </>
+                  );
+                })()}
             </div>
             <div className="flex justify-between text-[10px] mt-2 text-textMuted">
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary"></span> {t('profile.assets')}: ${totalAssets.toLocaleString()}</span>
@@ -102,15 +158,69 @@ export const Profile: React.FC = () => {
         </div>
       </div>
 
+      {/* Income Settings Card */}
+      <div
+        onClick={() => setShowIncomeModal(true)}
+        className="bg-surface rounded-3xl p-5 border border-white/5 cursor-pointer hover:bg-surface/80 transition-colors"
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+              <DollarSign size={24} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-textMuted uppercase tracking-wider">Ingreso Mensual</p>
+              <p className="text-xl font-extrabold text-white">
+                ${(profile?.monthlyIncome || 0).toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-textMuted uppercase tracking-wider">Libre para Gastar</p>
+            <p className={`text-lg font-bold ${(profile?.monthlyIncome || 0) - (profile?.fixedExpenses || 0) > 0 ? 'text-primary' : 'text-accent'}`}>
+              ${Math.max(0, (profile?.monthlyIncome || 0) - (profile?.fixedExpenses || 0)).toLocaleString()}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between text-[10px] text-textMuted">
+          <span>Gastos Fijos: ${(profile?.fixedExpenses || 0).toLocaleString()}</span>
+          <span className="flex items-center gap-1">
+            Configurar <ChevronRight size={12} />
+          </span>
+        </div>
+      </div>
+
       {/* Assets List */}
       <section>
           <div className="flex justify-between items-center mb-3">
             <h3 className="font-bold text-lg">{t('profile.assets')}</h3>
-            <button className="text-primary text-xs font-bold">{t('profile.add')}</button>
+            <button
+              onClick={() => {
+                setEditingAsset(null);
+                setShowAssetModal(true);
+              }}
+              className="text-primary text-xs font-bold flex items-center gap-1 hover:underline"
+            >
+              <Plus size={14} /> {t('profile.add')}
+            </button>
           </div>
           <div className="space-y-2">
-              {MOCK_ASSETS.map(asset => (
-                  <div key={asset.id} className="flex justify-between items-center bg-surface/50 p-4 rounded-2xl border border-white/5">
+              {assets.length === 0 ? (
+                <div className="text-center py-8 text-textMuted">
+                  <Wallet size={48} className="mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No assets yet</p>
+                  <p className="text-xs mt-1">Add your first asset to track your net worth</p>
+                </div>
+              ) : (
+                assets.map(asset => (
+                  <div
+                    key={asset.id}
+                    onClick={() => {
+                      setEditingAsset(asset);
+                      setShowAssetModal(true);
+                    }}
+                    className="flex justify-between items-center bg-surface/50 p-4 rounded-2xl border border-white/5 cursor-pointer hover:bg-surface/70 transition-colors"
+                  >
                       <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                              <Wallet size={20} />
@@ -122,7 +232,8 @@ export const Profile: React.FC = () => {
                       </div>
                       <span className="font-bold text-emerald-500">+${asset.value.toLocaleString()}</span>
                   </div>
-              ))}
+                ))
+              )}
           </div>
       </section>
 
@@ -130,7 +241,7 @@ export const Profile: React.FC = () => {
       <section>
           <div className="flex justify-between items-center mb-3">
             <h3 className="font-bold text-lg">{t('profile.vault')}</h3>
-            <span className="text-xs text-textMuted">{MOCK_USER.badges.length} {t('profile.unlocked')}</span>
+            <span className="text-xs text-textMuted">{profile.badges.length} {t('profile.unlocked')}</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
               {allBadgesDisplay.map((badge) => (
@@ -156,6 +267,58 @@ export const Profile: React.FC = () => {
           </div>
       </section>
 
+      {/* Tools Section */}
+      <section className="mt-2">
+          <h3 className="font-bold text-lg mb-3">Herramientas</h3>
+          <div className="space-y-2">
+            <Link
+              to="/transactions"
+              className="w-full flex justify-between items-center p-4 rounded-2xl bg-surface/50 border border-white/5 transition-colors hover:bg-surface/80"
+            >
+              <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+                    <Receipt size={20} />
+                  </div>
+                  <div>
+                    <span className="font-bold text-sm">Historial de Gastos</span>
+                    <p className="text-xs text-textMuted">Ver y filtrar transacciones</p>
+                  </div>
+              </div>
+              <ChevronRight size={16} className="text-textMuted" />
+            </Link>
+            <Link
+              to="/budget"
+              className="w-full flex justify-between items-center p-4 rounded-2xl bg-surface/50 border border-white/5 transition-colors hover:bg-surface/80"
+            >
+              <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                    <PieChart size={20} />
+                  </div>
+                  <div>
+                    <span className="font-bold text-sm">Presupuestos</span>
+                    <p className="text-xs text-textMuted">Controla gastos por categoria</p>
+                  </div>
+              </div>
+              <ChevronRight size={16} className="text-textMuted" />
+            </Link>
+            <Link
+              to="/calculator"
+              className="w-full flex justify-between items-center p-4 rounded-2xl bg-surface/50 border border-white/5 transition-colors hover:bg-surface/80"
+            >
+              <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Calculator size={20} />
+                  </div>
+                  <div>
+                    <span className="font-bold text-sm">Calculadora de Interés</span>
+                    <p className="text-xs text-textMuted">Calcula pagos y amortización</p>
+                  </div>
+              </div>
+              <ChevronRight size={16} className="text-textMuted" />
+            </Link>
+          </div>
+      </section>
+
       <button 
         onClick={() => setShowSettings(true)}
         className="w-full flex justify-between items-center p-4 rounded-2xl bg-surfaceHighlight border border-white/5 mt-4 transition-colors hover:bg-surfaceHighlight/80"
@@ -168,11 +331,30 @@ export const Profile: React.FC = () => {
       </button>
 
       <ReminderSettings isOpen={showSettings} onClose={() => setShowSettings(false)} />
-      
-      <ProUpgradeModal 
-        isOpen={showUpgradeModal} 
+
+      <ProUpgradeModal
+        isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        onSuccess={() => setRefresh(prev => prev + 1)} 
+        onSuccess={() => setRefresh(prev => prev + 1)}
+      />
+
+      <AssetModal
+        isOpen={showAssetModal}
+        onClose={() => {
+          setShowAssetModal(false);
+          setEditingAsset(null);
+        }}
+        onUpdate={() => setRefresh(prev => prev + 1)}
+        editAsset={editingAsset}
+      />
+
+      <IncomeSettingsModal
+        isOpen={showIncomeModal}
+        onClose={() => setShowIncomeModal(false)}
+        onUpdate={() => setRefresh(prev => prev + 1)}
+        currentIncome={profile?.monthlyIncome}
+        currentExpenses={profile?.fixedExpenses}
+        currentPayday={profile?.notificationPreferences?.paydayDayOfMonth}
       />
 
       <div className="h-8"></div>

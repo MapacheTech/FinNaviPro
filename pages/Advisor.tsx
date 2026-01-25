@@ -1,31 +1,53 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User } from 'lucide-react';
-import { getFinancialAdvice } from '../services/geminiService';
-import { ChatMessage } from '../types';
-import { MOCK_USER, MOCK_DEBTS } from '../constants';
+import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { n8nService } from '../services/n8nService';
+import { profileService } from '../services/profileService';
+import { ChatMessage, UserProfile } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Advisor: React.FC = () => {
   const { t, language } = useLanguage();
+  const { user } = useAuth(); // Get current user for personalized queries
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const initialMessage = language === 'en' 
-    ? t('advisor.intro').replace('{name}', MOCK_USER.name).replace('${amount}', MOCK_USER.freeSpendingPower.toString())
-    : t('advisor.intro_es').replace('{name}', MOCK_USER.name).replace('${amount}', MOCK_USER.freeSpendingPower.toString());
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  // Reset messages when language changes
+  // Load profile data
   useEffect(() => {
+    const loadProfile = async () => {
+      setProfileLoading(true);
+      try {
+        const profileData = await profileService.getProfile();
+        setProfile(profileData);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    loadProfile();
+  }, []);
+
+  // Reset messages when language or profile changes
+  useEffect(() => {
+    if (!profile) return;
+
+    const initialMessage = language === 'en'
+      ? t('advisor.intro').replace('{name}', profile.name).replace('${amount}', profile.freeSpendingPower.toString())
+      : t('advisor.intro_es').replace('{name}', profile.name).replace('${amount}', profile.freeSpendingPower.toString());
+
     setMessages([{
         id: 'init',
         role: 'model',
         text: initialMessage,
         timestamp: new Date()
     }]);
-  }, [language]);
+  }, [language, profile]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,27 +71,54 @@ export const Advisor: React.FC = () => {
     setInput('');
     setLoading(true);
 
-    const context = `
-      User Profile: ${JSON.stringify(MOCK_USER)}
-      Debts: ${JSON.stringify(MOCK_DEBTS)}
-      IMPORTANT: Reply in ${language === 'es' ? 'Spanish (Latin American)' : 'English'}.
+    // Build conversation history for context
+    const conversationHistory = [...messages, userMsg]
+      .slice(-5) // Keep last 5 messages for context
+      .map(m => `${m.role}: ${m.text}`)
+      .join('\n');
+
+    // Note: Don't send debts - n8n fetches real debts from Supabase using userId
+    const fullPrompt = `
+      User name: ${profile?.name || 'User'}
+      Language: ${language === 'es' ? 'Spanish (Latin American)' : 'English'}
+
+      User message: ${input}
+
+      Recent conversation:
+      ${conversationHistory}
     `;
 
-    const responseText = await getFinancialAdvice(
-        [...messages, userMsg].map(m => ({ role: m.role, text: m.text })), 
-        context
-    );
+    try {
+      // Send user message with userId for personalized debt data
+      const responseText = await n8nService.chat(fullPrompt, user?.id);
 
-    const botMsg: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'model',
-      text: responseText,
-      timestamp: new Date()
-    };
+      const botMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: responseText,
+        timestamp: new Date()
+      };
 
-    setMessages(prev => [...prev, botMsg]);
+      setMessages(prev => [...prev, botMsg]);
+    } catch (e) {
+      console.error(e);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: 'model',
+        text: "Connection error. Please ensure n8n is running.",
+        timestamp: new Date()
+      }]);
+    }
     setLoading(false);
   };
+
+  if (profileLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col">

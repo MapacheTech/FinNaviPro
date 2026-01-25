@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #09090b;
+  --color-surface: #18181b;
+  --color-surfaceHighlight: #27272a;
+  --color-primary: #13ec13;
+  --color-primaryDim: #0f8a0f;
+  --color-secondary: #7f0df2;
+  --color-accent: #f472b6; 
+  --color-text: #ffffff;
+  --color-textMuted: #a1a1aa;
+
+  --shadow-neon-green: 0 0 10px rgba(19, 236, 19, 0.5), 0 0 20px rgba(19, 236, 19, 0.3);
+  --shadow-neon-purple: 0 0 10px rgba(127, 13, 242, 0.5), 0 0 20px rgba(127, 13, 242, 0.3);
+  --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.1);
+
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  
+  --font-sans: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* Fallback fonts if Manrope/Inter fail to load offline */
+@font-face {
+  font-family: 'Manrope';
+  src: local('Manrope'), local('sans-serif');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter'), local('sans-serif');
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-sans);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 24px);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+.glass-panel {
+  background: rgba(24, 24, 27, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
