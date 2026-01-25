@@ -171,7 +171,7 @@ export const Profile: React.FC = () => {
       {/* Income Settings Card */}
       <div
         onClick={() => setShowIncomeModal(true)}
-        className="bg-surface rounded-3xl p-5 border border-white/5 cursor-pointer hover:bg-surface/80 transition-colors"
+        className="bg-surface rounded-3xl p-5 border border-white/5 cursor-pointer hover:bg-surface/80 transition-colors group"
       >
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -192,10 +192,17 @@ export const Profile: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-between text-[10px] text-textMuted">
-          <span>Gastos Fijos: ${(profile?.fixedExpenses || 0).toLocaleString()}</span>
-          <span className="flex items-center gap-1">
-            Configurar <ChevronRight size={12} />
+        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between text-[10px]">
+          <div className="flex gap-4 text-textMuted">
+            <span>Gastos Fijos: ${(profile?.fixedExpenses || 0).toLocaleString()}</span>
+            {profile?.notificationPreferences?.paydayDayOfMonth && (
+              <span className="text-primary">
+                Día de pago: {profile.notificationPreferences.paydayDayOfMonth}
+              </span>
+            )}
+          </div>
+          <span className="flex items-center gap-1 text-primary font-bold group-hover:underline">
+            <Edit3 size={12} /> Editar
           </span>
         </div>
       </div>
