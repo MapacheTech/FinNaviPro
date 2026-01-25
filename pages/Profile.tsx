@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AVAILABLE_BADGES } from '../constants';
-import { Wallet, Award, Settings, ChevronRight, Lock, Crown, Star, CheckCircle, Calculator, Loader2, Plus, DollarSign, Receipt, PieChart } from 'lucide-react';
+import { Wallet, Award, Settings, ChevronRight, Lock, Crown, Star, CheckCircle, Calculator, Loader2, Plus, DollarSign, Receipt, PieChart, Edit3 } from 'lucide-react';
 import { ReminderSettings } from '../components/ReminderSettings';
 import { ProUpgradeModal } from '../components/ProUpgradeModal';
 import { AssetModal } from '../components/AssetModal';
 import { IncomeSettingsModal } from '../components/IncomeSettingsModal';
+import { EditProfileModal } from '../components/EditProfileModal';
 import { useLanguage } from '../contexts/LanguageContext';
 import { profileService } from '../services/profileService';
 import { assetService } from '../services/assetService';
@@ -17,6 +18,7 @@ export const Profile: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAssetModal, setShowAssetModal] = useState(false);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -77,10 +79,18 @@ export const Profile: React.FC = () => {
                 {profile.subscriptionStatus === 'pro' ? 'PRO' : `${t('profile.level')} ${profile.level}`}
              </div>
         </div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-            {profile.name}
-            {profile.subscriptionStatus === 'pro' && <Crown size={18} className="text-secondary" fill="currentColor" />}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+              {profile.name}
+              {profile.subscriptionStatus === 'pro' && <Crown size={18} className="text-secondary" fill="currentColor" />}
+          </h1>
+          <button
+            onClick={() => setShowEditProfileModal(true)}
+            className="p-2 rounded-full bg-surfaceHighlight hover:bg-surface transition-colors"
+          >
+            <Edit3 size={16} className="text-textMuted hover:text-white" />
+          </button>
+        </div>
         <div className="flex items-center gap-2 mt-1">
             <p className="text-textMuted text-sm">{t('profile.warrior')}</p>
             <span className="w-1 h-1 bg-textMuted rounded-full"></span>
@@ -355,6 +365,14 @@ export const Profile: React.FC = () => {
         currentIncome={profile?.monthlyIncome}
         currentExpenses={profile?.fixedExpenses}
         currentPayday={profile?.notificationPreferences?.paydayDayOfMonth}
+      />
+
+      <EditProfileModal
+        isOpen={showEditProfileModal}
+        onClose={() => setShowEditProfileModal(false)}
+        onUpdate={() => setRefresh(prev => prev + 1)}
+        currentName={profile?.name || ''}
+        currentCreditScore={profile?.creditScore || 700}
       />
 
       <div className="h-8"></div>

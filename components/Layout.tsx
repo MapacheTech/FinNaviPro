@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { Home, PieChart, MessageCircle, User, Plus, X, CreditCard, ArrowDownCircle, ArrowUpCircle, Calculator } from 'lucide-react';
+import { Home, PieChart, MessageCircle, User, Plus, X, CreditCard, ArrowDownCircle, ArrowUpCircle, Calculator, Users } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -72,6 +72,16 @@ const QuickAddMenu: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
             </div>
             <span className="text-xs font-bold text-white">Calc</span>
           </button>
+
+          <button
+            onClick={() => handleAction('/advisor')}
+            className="flex flex-col items-center gap-2 group"
+          >
+            <div className="w-14 h-14 bg-purple-500 rounded-2xl flex items-center justify-center shadow-lg group-active:scale-95 transition-transform">
+              <MessageCircle size={28} className="text-white" />
+            </div>
+            <span className="text-xs font-bold text-white">AI</span>
+          </button>
         </div>
 
         {/* Close Button */}
@@ -114,7 +124,7 @@ const BottomNav: React.FC<{ onAddClick: () => void }> = ({ onAddClick }) => {
            </button>
         </div>
 
-        <NavItem to="/advisor" icon={MessageCircle} label="Advisor" active={location.pathname === '/advisor'} />
+        <NavItem to="/social" icon={Users} label="Social" active={location.pathname === '/social'} />
         <NavItem to="/profile" icon={User} label="Profile" active={location.pathname === '/profile'} />
       </div>
     </nav>
