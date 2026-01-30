@@ -1,19 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AVAILABLE_BADGES } from '../constants';
-import { Wallet, Award, Settings, ChevronRight, Lock, Crown, Star, CheckCircle, Calculator, Loader2, Plus, DollarSign, Receipt, PieChart, Edit3 } from 'lucide-react';
+import { Wallet, Award, Settings, ChevronRight, Lock, Crown, Star, CheckCircle, Calculator, Loader2, Plus, DollarSign, Receipt, PieChart, Edit3, LogOut } from 'lucide-react';
 import { ReminderSettings } from '../components/ReminderSettings';
 import { ProUpgradeModal } from '../components/ProUpgradeModal';
 import { AssetModal } from '../components/AssetModal';
 import { IncomeSettingsModal } from '../components/IncomeSettingsModal';
 import { EditProfileModal } from '../components/EditProfileModal';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { profileService } from '../services/profileService';
 import { assetService } from '../services/assetService';
 import { UserProfile, Asset } from '../types';
 
 export const Profile: React.FC = () => {
   const { t } = useLanguage();
+  const { logout } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAssetModal, setShowAssetModal] = useState(false);
@@ -336,7 +338,7 @@ export const Profile: React.FC = () => {
           </div>
       </section>
 
-      <button 
+      <button
         onClick={() => setShowSettings(true)}
         className="w-full flex justify-between items-center p-4 rounded-2xl bg-surfaceHighlight border border-white/5 mt-4 transition-colors hover:bg-surfaceHighlight/80"
       >
@@ -345,6 +347,17 @@ export const Profile: React.FC = () => {
               <span className="font-bold text-sm">{t('profile.settings')}</span>
           </div>
           <ChevronRight size={16} className="text-textMuted" />
+      </button>
+
+      {/* Logout Button */}
+      <button
+        onClick={logout}
+        className="w-full flex justify-between items-center p-4 rounded-2xl bg-red-500/10 border border-red-500/20 mt-3 transition-colors hover:bg-red-500/20"
+      >
+          <div className="flex items-center gap-3 text-red-500">
+              <LogOut size={20} />
+              <span className="font-bold text-sm">Cerrar Sesión</span>
+          </div>
       </button>
 
       <ReminderSettings isOpen={showSettings} onClose={() => setShowSettings(false)} />
