@@ -10,6 +10,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { debtService } from '../services/debtService';
 import { profileService } from '../services/profileService';
 import { achievementService } from '../services/achievementService';
+import { AdBanner } from '../components/AdBanner';
 
 const DebtCard: React.FC<{ 
   debt: Debt; 
@@ -280,6 +281,9 @@ export const DebtCommandCenter: React.FC = () => {
          </div>
        )}
        
+       {/* Ad Banner */}
+       <AdBanner placement="debts" subscriptionStatus={profile?.subscriptionStatus} />
+
        <div className="h-10"></div>
 
        {/* Add/Edit Debt Modal */}

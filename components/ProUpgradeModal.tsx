@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Crown, CreditCard, ShieldCheck, Star } from 'lucide-react';
+import { X, Check, Crown, CreditCard, ShieldCheck, Star, Bot, BellOff, Sparkles, PiggyBank } from 'lucide-react';
 import { profileService } from '../services/profileService';
 
 interface ProUpgradeModalProps {
@@ -15,11 +15,10 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({ isOpen, onClos
   const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvc: '' });
 
   const benefits = [
-    "Unlimited AI Advisor chats",
-    "Advanced 'What-If' Scenarios",
-    "Smart Income Detection",
-    "Custom Savings Goals",
-    "Ad-free Experience"
+    { icon: <Bot size={16} />, text: "AI Advisor ilimitado", detail: "10 → Sin limite de mensajes/mes" },
+    { icon: <BellOff size={16} />, text: "Sin anuncios", detail: "Experiencia limpia y sin interrupciones" },
+    { icon: <Sparkles size={16} />, text: "What-If Scenarios avanzados", detail: "Simulaciones detalladas de deudas" },
+    { icon: <PiggyBank size={16} />, text: "Metas de ahorro personalizadas", detail: "Crea multiples metas con seguimiento" },
   ];
 
   const handlePayment = async () => {
@@ -67,11 +66,14 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({ isOpen, onClos
 
                     <div className="space-y-3 mb-8">
                         {benefits.map((benefit, i) => (
-                            <div key={i} className="flex items-center gap-3">
-                                <div className="w-5 h-5 rounded-full bg-secondary/20 flex items-center justify-center text-secondary shrink-0">
-                                    <Check size={12} strokeWidth={3} />
+                            <div key={i} className="flex items-center gap-3 bg-surfaceHighlight/50 p-3 rounded-xl border border-white/5">
+                                <div className="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center text-secondary shrink-0">
+                                    {benefit.icon}
                                 </div>
-                                <span className="text-sm text-gray-300">{benefit}</span>
+                                <div>
+                                    <span className="text-sm font-bold text-white">{benefit.text}</span>
+                                    <p className="text-[10px] text-textMuted">{benefit.detail}</p>
+                                </div>
                             </div>
                         ))}
                     </div>

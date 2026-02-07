@@ -22,6 +22,8 @@ import {
   X
 } from 'lucide-react';
 import { transactionService, Transaction, TransactionType } from '../services/transactionService';
+import { profileService } from '../services/profileService';
+import { AdBanner } from '../components/AdBanner';
 
 type FilterType = 'all' | 'expense' | 'income';
 type DateFilter = 'all' | 'week' | 'month' | '3months';
@@ -50,11 +52,15 @@ export const Transactions: React.FC = () => {
   const [dateFilter, setDateFilter] = useState<DateFilter>('month');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('trial');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadTransactions();
+    profileService.getProfile().then(p => {
+      if (p) setSubscriptionStatus(p.subscriptionStatus);
+    });
   }, [dateFilter]);
 
   const loadTransactions = async () => {
@@ -283,6 +289,9 @@ export const Transactions: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Ad Banner */}
+      <AdBanner placement="transactions" subscriptionStatus={subscriptionStatus} />
 
       {/* Transaction List */}
       {groupedByDate.length === 0 ? (

@@ -11,6 +11,7 @@ import { debtService } from '../services/debtService';
 import { notificationService } from '../services/notificationService';
 import { profileService } from '../services/profileService';
 import { savingsService } from '../services/savingsService';
+import { AdBanner } from '../components/AdBanner';
 
 export const Dashboard: React.FC = () => {
   const { t } = useLanguage();
@@ -281,6 +282,9 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Ad Banner for free users */}
+      <AdBanner placement="dashboard" subscriptionStatus={profile?.subscriptionStatus} />
 
       <SavingsGoalModal
         isOpen={showSavingsModal}
